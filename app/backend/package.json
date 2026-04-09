@@ -1,0 +1,13 @@
+{
+  "name": "dr-demo-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node -e \"console.log('backend tests placeholder passed')\""
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

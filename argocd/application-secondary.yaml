@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dr-demo-secondary
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/bhanu0710/multi-region-gitops-dr.git
+    targetRevision: main
+    path: helm/dr-demo
+    helm:
+      parameters:
+        - name: clusterRole
+          value: secondary
+        - name: awsRegion
+          value: us-east-1
+        - name: ingress.host
+          value: secondary.dr-demo.example.com
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dr-demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

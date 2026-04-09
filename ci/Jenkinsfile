@@ -1,0 +1,59 @@
+pipeline {
+  agent any
+
+  environment {
+    REGISTRY = "${env.DOCKERHUB_USER}"
+    IMAGE_TAG = "${env.GIT_COMMIT?.take(7) ?: 'local'}"
+    GITOPS_BRANCH = "main"
+  }
+
+  stages {
+    stage("Test Backend") {
+      steps {
+        dir("app/backend") {
+          sh "npm ci"
+          sh "npm test"
+        }
+      }
+    }
+
+    stage("Build and Push Image") {
+      when { expression { return env.DOCKERHUB_USER?.trim() } }
+      steps {
+        sh '''
+          set -euo pipefail
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
+          docker build -t "$REGISTRY/dr-demo-backend:$IMAGE_TAG" app/backend
+          docker push "$REGISTRY/dr-demo-backend:$IMAGE_TAG"
+        '''
+      }
+    }
+
+    stage("Promote GitOps Tag") {
+      when {
+        allOf {
+          expression { return env.DOCKERHUB_USER?.trim() }
+          branch "main"
+        }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+
+          sed -i.bak -E "s|^(\\s*tag:\\s*).*$|\\1${IMAGE_TAG}|g" helm/dr-demo/values.yaml
+          rm -f helm/dr-demo/values.yaml.bak
+
+          git add helm/dr-demo/values.yaml
+          if git diff --cached --quiet; then
+            echo "No chart tag updates."
+            exit 0
+          fi
+
+          git -c user.name="ci-bot" -c user.email="ci-bot@local" \
+            commit -m "chore(gitops): promote dr-demo image ${IMAGE_TAG}"
+          git push origin HEAD:${GITOPS_BRANCH}
+        '''
+      }
+    }
+  }
+}

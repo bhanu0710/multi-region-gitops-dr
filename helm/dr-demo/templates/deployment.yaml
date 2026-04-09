@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dr-demo
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dr-demo
+  template:
+    metadata:
+      labels:
+        app: dr-demo
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          env:
+            - name: AWS_REGION
+              value: {{ .Values.awsRegion | quote }}
+            - name: CLUSTER_ROLE
+              value: {{ .Values.clusterRole | quote }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
