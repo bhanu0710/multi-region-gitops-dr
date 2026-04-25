@@ -9,6 +9,8 @@ pipeline {
 
   stages {
     stage("Test Backend") {
+      // No tests implemented yet — stage kept as placeholder.
+      // Replace npm test script with real Jest tests before going to production.
       steps {
         dir("app/backend") {
           sh "npm ci"
@@ -25,6 +27,15 @@ pipeline {
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
           docker build -t "$REGISTRY/dr-demo-backend:$IMAGE_TAG" app/backend
           docker push "$REGISTRY/dr-demo-backend:$IMAGE_TAG"
+        '''
+      }
+    }
+
+    stage("Image Scan (Trivy)") {
+      when { expression { return env.DOCKERHUB_USER?.trim() } }
+      steps {
+        sh '''
+          trivy image --exit-code 1 --severity HIGH,CRITICAL "$REGISTRY/dr-demo-backend:$IMAGE_TAG"
         '''
       }
     }
@@ -54,6 +65,16 @@ pipeline {
           git push origin HEAD:${GITOPS_BRANCH}
         '''
       }
+    }
+  }
+
+  post {
+    always {
+      sh 'docker logout || true'
+      cleanWs()
+    }
+    failure {
+      echo 'Pipeline failed — check logs above.'
     }
   }
 }

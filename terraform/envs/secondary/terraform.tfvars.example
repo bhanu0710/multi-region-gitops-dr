@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit real values.
+
+region       = "us-east-1"
+cluster_name = "dr-demo-secondary"
+vpc_cidr     = "10.20.0.0/16"

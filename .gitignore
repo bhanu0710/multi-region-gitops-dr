@@ -8,9 +8,12 @@
 !**/.env.example
 
 **/.terraform/
-**/.terraform.lock.hcl
 **/*.tfstate
 **/*.tfstate.*
 **/crash.log
 
 **/*.log
+
+# Docs / interview guides
+*.pdf
+*.docx

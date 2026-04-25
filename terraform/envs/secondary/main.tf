@@ -6,6 +6,14 @@ terraform {
       version = ">= 5.0"
     }
   }
+
+  backend "s3" {
+    bucket         = "bhanu0710-multi-region-gitops-dr-tf-state"
+    key            = "multi-region-gitops-dr/secondary/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock"
+  }
 }
 
 provider "aws" {
@@ -32,7 +40,7 @@ module "eks" {
   source = "../../modules/eks"
 
   cluster_name    = var.cluster_name
-  cluster_version = "1.29"
+  cluster_version = "1.31"
   vpc_id          = module.network.vpc_id
   private_subnets = module.network.private_subnets
 }

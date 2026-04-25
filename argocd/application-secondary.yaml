@@ -18,7 +18,10 @@ spec:
         - name: ingress.host
           value: secondary.dr-demo.example.com
   destination:
-    server: https://kubernetes.default.svc
+    # Replace with your secondary EKS cluster endpoint from:
+    # aws eks describe-cluster --name dr-secondary --region us-east-1 --query cluster.endpoint --output text
+    # Then register it with ArgoCD: argocd cluster add <kubectl-context-name>
+    server: https://<SECONDARY-CLUSTER-ENDPOINT>
     namespace: dr-demo
   syncPolicy:
     automated:
@@ -26,3 +29,9 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

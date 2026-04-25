@@ -4,7 +4,7 @@ metadata:
   name: dr-demo
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicaCount | default 2 }}
   selector:
     matchLabels:
       app: dr-demo
@@ -13,10 +13,22 @@ spec:
       labels:
         app: dr-demo
     spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
           env:
@@ -28,9 +40,15 @@ spec:
             httpGet:
               path: /health
               port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
